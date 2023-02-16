@@ -21,6 +21,10 @@ struct NumberComparator {
             }
         }
         if (l == r) return false;
+        /*
+        So far: works for the strings of the same size, doesn't work for the string of different sizes.
+        If you comment out the line above the code doesn't work either, somehow
+        */
         int max = l > r ? l : r;
         for (int i = min; i < max; i++) {
             if (l > r) {
@@ -34,14 +38,8 @@ struct NumberComparator {
             }
         }
         for (int i = max; i < l + r; i++) {
-            if (l > r) {
-                if (rx.at(i - l) < lx.at(i - r)) {
-                    return true;
-                }
-            } else {
-                if (rx.at(i - l) < lx.at(i - r)) {
-                    return true;
-                }
+            if (rx.at(i - l) < lx.at(i - r)) {
+                return true;
             }
         }
         return false;
