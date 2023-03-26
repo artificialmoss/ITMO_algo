@@ -5,69 +5,6 @@
 
 using namespace std;
 
-/*void print_deque(deque<int>& queue, const deque<int>::iterator& middle_pos) {
-    for (auto it = queue.begin(); it != queue.end(); it++) {
-        if (*it == *middle_pos) {
-            cout << "[ ] " << *it << " ";
-        } else {
-            cout << *it << " ";
-        }
-    }
-    if (*middle_pos == *queue.end()) {
-        cout << "[ ] ";
-    }
-    cout << endl;
-}
-
-int main() {
-    int n;
-    cin >> n;
-    deque<int> queue;
-    auto middle_position = queue.begin();
-    int length = 0;
-    string line;
-    for (int i = 0; i < n; i++) {
-        cin >> line;
-        int goblin_number;
-        if (length == 0) {
-            middle_position = queue.begin();
-        }
-        //print_deque(queue, middle_position);
-        switch (line.at(0)) {
-            case '+': {
-                cin >> goblin_number;
-                queue.push_back(goblin_number);
-                length++;
-                break;
-            }
-            case '*': {
-                cin >> goblin_number;
-                queue.insert(middle_position, goblin_number);
-                length++;
-                break;
-            }
-            case '-': {
-                cout << queue.front() << endl;
-                length--;
-                queue.pop_front(); //проблема НЕ в этом
-                break;
-            }
-        }
-
-        if (length == 1) {
-            middle_position = queue.end();
-        }
-        else {
-            if (length % 2 == 1) {
-                middle_position++;
-            }
-        }
-
-        //cout << length << " " << (middle_position == queue.end()) << endl;
-        print_deque(queue, middle_position);
-    }
-}*/
-
 void stabilize_queue(int length, deque<int>& first, deque<int>& second) {
     if (length % 2 == 1) {
         int tmp = second.front();

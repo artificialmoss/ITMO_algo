@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 #include <deque>
 #include <algorithm>
 
@@ -58,6 +59,7 @@ int main() {
     deque<string> numbers;
     string line;
     while (cin >> line) {
+        //if (line.at(0)=='/') break;
         numbers.push_back(line);
     }
     sort(numbers.begin(), numbers.end(), NumberComparator());
