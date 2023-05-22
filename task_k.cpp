@@ -1,122 +1,105 @@
+//
+// Created by Женя on 21.04.2023.
+//
+
 #include <iostream>
-#include <unordered_map>
+#include <map>
+#include <deque>
 #include <vector>
 
 using namespace std;
 
-class mem_block {
-public:
-    unsigned int offset;
-    unsigned int size;
-    bool is_free;
-    struct mem_block* next;
-};
-
-void print_block(mem_block* block) {
-    if (!block) {
-        cout << "NO";
-        return;
+void erase_block_from_multimap(multimap<int, int>& offset_by_size, int offset, int size) {
+    auto it = offset_by_size.find(size);
+    while (it->second != offset) {
+        it++;
     }
-    cout << '[' << block->offset << (block->is_free ? ".." : "||") << block->size + block->offset - 1 << ']';
+    if (it != offset_by_size.end()) {
+        offset_by_size.erase(it);
+    } // O(n)
 }
 
-void print_state(mem_block* head) {
-    while (head) {
-        print_block(head);
-        head = head->next;
+void print_free(map<int, int>& size_by_offset) {
+    cout << "=== FREE BLOCKS ===\n";
+    for (auto it = size_by_offset.begin(); it != size_by_offset.end(); it++) {
+        cout << "[" << it->first << ".." << it->first + it->second - 1 << "] ";
     }
+    cout << endl;
 }
 
-void merge_blocks(mem_block* block) {
-    while (block && block->next && block->is_free && block->next->is_free) {
-        block->size = block->size + block->next->size;
-        block->next = block->next->next;
-    }
-}
-
-inline void split_blocks(mem_block* block, unsigned int req) {
-    if (req == block->size) {
-        return;
-    }
-    mem_block new_block = mem_block {
-            .offset = block->offset + req,
-            .size = block->size - req,
-            .is_free = true,
-            .next = block->next
-    };
-    block->next = &new_block;
-    block->size = req;
-}
-
-mem_block* find_block(mem_block* head, unsigned int size) {
-    while (head) {
-        if (head->is_free && head->size >= size) {
-            /*cout << "found:";
-            print_block(head);
-            cout << endl;*/
-            return head;
+void print_history(vector<pair<int, int>>& history) {
+    cout << "=== HISTORY ===\n";
+    for (auto it = history.begin(); it != history.end(); it++) {
+        if (it->first > 0) {
+            cout << "[" << it - history.begin() << "]" << it->first << "->" << it->second << " ";
         }
-        head = head->next;
     }
-    return nullptr;
+    cout << endl;
 }
 
 int main() {
-    unsigned int n, m;
+    int n, m;
     cin >> n >> m;
-    mem_block memory = {
-            .offset = 1,
-            .size = n,
-            .is_free = true,
-            .next = nullptr
-    };
-    vector<mem_block> history;
-    vector<mem_block> free_blocks = vector<mem_block>();
-    history.resize(m + 1);
-    string line;
-    unsigned int req;
-    mem_block* resp;
+
+    map<int, int> size_by_offset = map<int, int>();
+    multimap<int, int> offset_by_size;
+    vector<pair<int, int>> history = vector<pair<int, int>>(m + 1);
+    int req;
+
+    size_by_offset[1] = n;
+    offset_by_size.insert(make_pair(n, 1));
+
     for (int i = 1; i <= m; i++) {
-        cin >> line;
-        if (line[0] == '-') {
-            req = stoi(line.substr(1));
-            history[req].is_free = true;
-            mem_block* head = &memory;
-            while (head) {
-                merge_blocks(head);
-                head = head->next;
-            }
-            cout << req;
-            print_block(&history[req]);
-            cout << endl;
-            print_state(&memory);
-            cout <<endl << endl;
-        } else {
-            req = stoi(line);
-            resp = find_block(&memory, req);
-
-            if (resp) {
-                history.at(i) = *resp;
-                if (req < history.at(i).size) {
-                    free_blocks.push_back({
-                            .offset = history.at(i).offset + req,
-                            .size = history.at(i).size - req,
-                            .is_free = true,
-                            .next = history.at(i).next
-                    });
-                    history.at(i).next = &free_blocks.back();
-                    history.at(i).size = req;
+        cin >> req;
+        if (req > 0) {
+            auto it = offset_by_size.lower_bound(req);
+            if (it != offset_by_size.end()) {
+                int size = it->first;
+                int offset = it->second;
+                int size_remaining = size - req;
+                if (size_remaining > 0) {
+                    int offset_next = offset + req;
+                    size_by_offset[offset_next] = size_remaining;
+                    offset_by_size.insert(make_pair(size_remaining, offset_next));
                 }
-                history.at(i).is_free = false;
-                print_block(&history.at(i));
-                cout << endl;
-                print_state(&memory);
-                cout <<endl << endl;
+                history[i] = make_pair(offset, req);
+                size_by_offset.erase(offset);
+                offset_by_size.erase(it);
 
-                cout << "\t" << resp->offset << endl;
+                cout << offset << endl;
             } else {
-                cout << "\t" << -1 << endl;
+                cout << -1 << endl;
+            }
+        } else {
+            req = -req;
+
+            int offset = history[req].first;
+            int size = history[req].second;
+
+            if (offset > 0 && size > 0) {
+                auto next_free = size_by_offset.lower_bound(offset);
+                map<int, int>::iterator prev_free;
+                if (next_free == size_by_offset.begin()) {
+                    prev_free = size_by_offset.end();
+                } else {
+                    prev_free = prev(next_free);
+                }
+                if (prev_free != size_by_offset.end() && prev_free->first + prev_free->second == offset) {
+                    offset = prev_free->first;
+                    size = prev_free->second + size;
+                    erase_block_from_multimap(offset_by_size, prev_free->first, prev_free->second);
+                    size_by_offset.erase(prev_free);
+                }
+                if (next_free != size_by_offset.end() && offset + size == next_free->first) {
+                    size += next_free->second;
+                    erase_block_from_multimap(offset_by_size, next_free->first, next_free->second);
+                    size_by_offset.erase(next_free);
+                }
+                size_by_offset[offset] = size;
+                offset_by_size.insert(make_pair(size, offset));
             }
         }
+        //print_free(size_by_offset);
+        //print_history(history);
     }
 }
